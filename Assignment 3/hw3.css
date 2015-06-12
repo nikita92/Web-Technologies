@@ -1,0 +1,100 @@
+/*   
+Assignment 3
+
+Aim :To develop and imitate a web page resembling a sample web page as accurately as possible
+Technology Used : HTML and CSS 
+
+This code contains the CSS code 
+
+*/
+
+
+/*First Row panel for "A Blue Green Web Page" */
+.firstDiv{                            
+left:-0%;
+top:-0%;
+background-image:url(header.png);
+height:98px;
+width:680px;
+
+}
+
+
+/*    First Row header "A Blue Green Web Page"       */
+#header1{
+font-family:Georgia,Serif;
+font-size:32px;
+font-weight:bold;
+padding-top:19px;
+padding-left:28px;
+
+}
+
+/*Second  Row panel for "Info,About,Portfolio, Services, Contact" */
+.secondDiv{
+position:absolute;
+left:-0%;
+top:98px;
+background-image:url(bar.png);
+height:55px;
+width:680px
+}
+
+/*Second  Row header for "Info,About,Portfolio, Services, Contact" */
+#header2{
+font-family:Sans-serif;
+font-size:14px;
+font-weight:500;
+padding-top:17px;
+padding-left:36px;
+}
+
+/* for anchors "Info,About,Portfolio, Services, Contact"  */
+a{
+text-decoration:none;
+color:#252F34;
+}
+
+/* padding for the links */
+.mainLinks{
+margin-left:8px;
+padding-right:47px;
+
+}
+
+
+/*Third Row panel for "The Article Title" */
+.thirdDiv{
+background:#869C80;
+position: absolute;
+left:-0%;
+top:153px;
+height:500px;
+width:680px;
+
+}
+
+/*Third Row Header for "The Article Title" */
+
+#thirdRow{
+font-family:Verdana;
+font-size:24px;
+font-weight:800;
+color:#2C4969;
+padding-top:10px;
+padding-left:19px;
+padding-bottom:4px;
+}
+
+/* for "The Article Title" content*/
+.sameRow{
+font-family:Arial;
+font-size:13px;
+font-weight:500;
+padding-top:5px;
+padding-left:19px;
+line-height:20px;
+
+}
+
+

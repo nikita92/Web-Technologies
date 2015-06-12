@@ -1,0 +1,180 @@
+<!-- 
+Assignment 4 
+
+Aim: Accept an URL of an XML document, parse it and display the results in a table 
+Technologies used: HTML, Javascript, XML
+
+-->
+
+<html>
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+
+<script type="text/javascript">
+ var xmlDoc;
+ 
+ <!-- Function for loading an XML file-->
+ function loadXML() 
+ {
+   var urlname= document.forms["form1"]["urlinput"].value;
+ 
+   //Check for invalid URL name 
+   if(urlname==""||urlname==" ")
+    {
+       alert('Invalid Input !');
+	   return false;
+    }
+ 
+   //check for invalid xml file 
+ 
+   if(!urlname.contains('.xml'))
+   {
+      alert('Not an xml file');
+      return false;
+   }
+ 
+ 
+   if (window.XMLHttpRequest)
+   {
+      // code for IE7+, Firefox, Chrome, Opera, Safari
+      xmlhttp=new XMLHttpRequest();
+   }
+   else
+   {
+      // code for IE6, IE5
+      xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+   }
+	try{
+	xmlhttp.open("GET",urlname,false); //open, send, responseXML are
+	xmlhttp.send(); //properties of XMLHTTPRequest
+	xmlDoc=xmlhttp.responseXML;
+	}
+	catch(e)
+	{
+	}
+	 if(xmlDoc==null)
+			{
+				alert("File is missing.");
+				return false;
+			}
+			
+ 
+ //Checking parse error in XML file  
+ if(xmlDoc.documentElement.nodeName=="parsererror")
+   {
+	alert("Error in XML File");
+	return false;
+   }
+		
+ //Checking empty XML file 
+ xml_check = xmlDoc.getElementsByTagName("Name");
+
+  if (xml_check.length==0)
+   {
+    alert('No company information found !');
+	return false;
+   }
+ 
+ printxml(xmlDoc);
+}
+
+<!-- function for displaying the contents from the XML file -->
+
+function printxml(xmlDoc){
+var i,j,k;
+var table=" ";
+
+var temp_arr = new Array();
+
+table= table+"<table border=1><tr>";
+x=xmlDoc.getElementsByTagName("Row")[1].childNodes;
+var x_length=(x.length-1)/2;
+
+for(i=0;i<x_length;i++)
+  {
+    temp_arr[i]=xmlDoc.getElementsByTagName("Data")[i].childNodes[0].nodeValue;
+  }
+for (i=0; i<x_length; i++)
+  {
+   var temp_text=temp_arr[i];
+  table=table+"<td colspan=4>"+temp_text.bold()+"</td>";
+  }
+  
+  
+table=table+"</tr>";
+
+y=xmlDoc.getElementsByTagName("Table")[0].childNodes;
+var y_length=((y.length-1)/2);
+
+for (j=1; j<y_length; j++)
+{
+   table=table+"<tr rowspan=4>";
+   
+   z=xmlDoc.getElementsByTagName("Row")[j].childNodes;
+   temp=xmlDoc.getElementsByTagName("Row")[j].firstChild;
+   for(k=0; k<z.length; k++)
+   {
+   if (temp.nodeType==1)
+   {
+	  try{
+	   print = temp.childNodes[0].nodeValue;
+	   }
+	   catch(e)
+	   {
+			print= "NA";
+	   }
+	   if(print!="NA")
+	   {
+      if (temp.nodeName=="HomePage")
+	  {
+		table=table+'<td colspan=4><a href="'+print+'">link to company</a></td>';
+		}
+	  else if (temp.nodeName=="Logo")
+	  {
+	  table=table+'<td colspan=8><img height=100 width=100 src="'+print+'"</td>';
+	  }
+	  else
+	  {
+      table=table+"<td colspan=4>"+print+"</td>";
+	  }
+	  }
+	  else{
+	  table=table+"<td colspan=4>N.A.</td>";
+	  }
+   }
+   temp=temp.nextSibling;  
+   }
+   
+   
+   table=table+"</tr>";
+
+
+
+}
+
+<!-- New pop-up window for displaying the results from XML in a table  -->
+var popupwindow = window.open("","Data","width=900,height=900,scrollbars=1,resizable=1");
+popupwindow.document.open();
+popupwindow.document.write(table);
+popupwindow.document.close();
+
+
+}
+
+// processing the document goes here
+</script>
+</head>
+<body >
+<center>
+<form id="form1" onsubmit="loadXML()">
+<p>Enter URL for Company List XML File</p>
+<input type="text" name="urlinput">
+<br>
+<br>
+<input type="submit">
+</form>
+
+<noscript>
+</body>
+</html>

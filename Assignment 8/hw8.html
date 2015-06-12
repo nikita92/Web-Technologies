@@ -1,0 +1,686 @@
+<!--
+Assigment 9 
+
+Aim: Develop an	interface to perform eBay item search and post details to Facebook.	
+Technologies Used :HTML,CSS,AJAX,XML,JSON,PHP,Bootstrap, jQuery and Amazon cloud computing Services.
+
+This code contains all the front end processes which includes
+-accepting the user data
+-parsing the server returned JSON data 
+-displaying the data in the appropriate format.
+
+
+-->
+
+<html>
+<head>
+
+<meta charset="utf-8">
+
+<!-- For  making the website responsive and enabling zoom  -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Files for ajax, and bootstrap  -->
+<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.1/jquery.validate.min.js"></script>
+
+<script>
+
+<!-- variables declared-->
+var response;   
+var no_pages=0;   
+var display_items=0; 
+var start=1;  
+var end=5;      
+var formdata;   
+var page_no=1; 
+
+//function for submit button 
+function submitTheForm()
+{
+    //ajax call
+	$.ajax({
+			type:'GET', 
+			url:"http://assignment82015-env.elasticbeanstalk.com",   	// address of php file on server side
+			data:(formdata+"&page_no="+ JSON.stringify(page_no)), 
+			success: function(temp_data) {
+											response = jQuery.parseJSON(temp_data); //returning Json data from server side 
+											parseTheData();  
+										 }
+		  }); 
+  
+  return false;
+}
+
+//Function for displaying modal image 
+function disp_Img(ind)
+{
+	$("#mymodalimage").attr('src',response["item"+ind]["basicInfo"]["pictureURLSuperSize"]);
+	$("#mymodallbl").text(response["item"+ind]["basicInfo"]["title"]);
+}
+
+function refresh(){
+ $("#res_count").html("");
+ $("#holder_div").html("");
+ $("#pages").html("");
+ $("#myform")[0].reset();
+ 
+}
+
+//Function for initially submitting the form 
+function initialize()
+{
+		page_no=1;
+		formdata = $('#myform').serialize();
+		start=1;
+		end=5;
+		display_items=0;
+		submitTheForm();
+		return false;
+}
+
+//function for displaying NA when no info present 
+            
+function findNA(temp)
+{
+		if(temp =="")
+		{
+			return "N/A";
+		}
+		return temp;
+}
+
+
+// validation function 
+$(document).ready(function () {
+
+	$("#mediaobject").hide();
+	$.validator.addMethod("pricecheck", function(value, ele) 
+	{
+		return this.optional(ele) ||  parseInt($('#priceto').val()) >= parseInt($('#pricefrom').val())
+	}, "Maximum price should be greater than minimum price");
+
+	$('#myform').validate({
+	rules:	 {
+			"keywords":{
+							required:true
+						},  
+						
+			pricefrom:{
+						number:true,
+						min:0
+						},
+			priceto:{
+						number:true,
+						min:0,
+						pricecheck:true
+         
+					 },
+			max_handling_days:
+			{
+				digits:true,
+				min:1,
+			}
+			},
+				messages:{
+							keywords:{
+										required: "Please enter valid keyword"
+									},
+							pricefrom:
+							{
+								number:"Price entered should be a valid number",
+								min:"Min price cannot be less than 0"
+							},
+							priceto:
+							{
+								number:"Price entered should be a valid number"
+							},
+							max_handling_days:{
+												digits:"Maximum handling time should be a valid digit",
+												min:"Maximum handling time should be greater than or equal to 1"
+												}
+
+      },
+	  
+	  
+	  //bootstrap css for implementing error functions 
+	  onfocusout: function(ele) { $(ele).valid()},
+      highlight: function(ele) 
+	  {
+          $(ele).closest('.form-group').addClass('has-error');
+      },
+      unhighlight: function(ele) 
+	  {
+          $(ele).closest('.form-group').removeClass('has-error');
+      },
+           
+	 errorElement: 'span',
+     errorClass: 'help-block',
+     errorPlacement: function(error, ele) {
+     if(ele.parent('.input-group').length) 
+	 {
+		error.insertAfter(ele.parent());
+     }
+	 else 
+	 {
+           error.insertAfter(ele);
+     
+	 }
+    
+	}
+
+  
+});
+});
+
+//Parsing the JSON data returned from PHP file at the server side  
+function parseTheData()
+{
+
+	if(response["ack"]=="No Results Found")
+	{
+		var temp = $("#res_count");
+		var disp_head = '<h3 class=\"media-heading\" id=\"title\">No Results Found</h3>';
+		temp.html(disp_head);
+	}
+	else
+	{
+		var temp = $("#res_count");
+		var disp_head = '<h3 class=\"media-heading\" id=\"title\">'+((page_no-1)*parseInt(response["itemCount"])+1)+' - '+((page_no)*parseInt(response["itemCount"]))+' out of '+response['resultCount']+'</h3>';
+		temp.html(disp_head);
+		var temp_x= $("#holder_div");
+		temp_x.html("");
+		var int_body="";
+		for(i=0;i<parseInt(response["itemCount"]);i++)
+		{
+		var counter=0;
+			if(display_items<parseInt(response["resultCount"]))
+			{
+				counter++;
+				int_body = int_body + '<div class=\"media\" class=\"col-xs-12\" id=\"mediaobject\"><div class=\"col-md-2\"></div>';
+				int_body =int_body+ "<div class=\"col-md-7\"><a data-toggle=\"modal\" data-target=\".bs-example-modal-lg\" onClick=\" return disp_Img("+i+");\"><img id=\"imagesource"+i+"\" class=\"pull-left media-object\" src=\""+response["item"+i]["basicInfo"]["galleryURL"]+"\" style=\"width:61px;height:64px;\"></img></a>";
+				int_body = int_body+'<div class=\"media-body\"><h4 style=\"padding-left:15px;\" class=\"media-heading\" id=\"title\">';
+				int_body = int_body+'<a href=\"'+response["item"+i]["basicInfo"]["viewItemURL"]+'\" id=\"media-heading-link\" style=\"text-decoration:none;\" target=\"_blank\">'+response["item"+i]["basicInfo"]["title"]+'</a></h4></div>';
+				int_body = int_body+'<div style=\"padding-left:5px; display:inline;\">';
+				int_body = int_body+'<b><div style=\"padding-left:6px; display:inline\" id=\"price\">Price :$'+response["item"+i]["basicInfo"]["convertedCurrentPrice"]+'</div></b>';
+				int_body = int_body+'<div style=\"padding-left:3px; display:inline;\" id=\"shipping\">';
+				
+				if(response["item"+i]["basicInfo"]["shippingServiceCost"]=="0.0" || response["item"+i]["basicInfo"]["shippingServiceCost"]=="")
+				{
+					int_body = int_body + '(Free Shipping)</div>'
+				}
+				else
+				{
+					int_body = int_body+'</div>';
+				}
+				
+				int_body = int_body+'<div style=\"padding-left:11px; display:inline;\" id=\"location\"><i>Location:'+response["item"+i]["basicInfo"]["location"]+'</i></div>';
+				
+				if(response["item"+i]["basicInfo"]["topRatedListing"]=="true")
+				{
+					int_body = int_body+'<div style=\"padding-left:11px; display:inline;\" id=\"rated\" ><img src=\"http://cs-server.usc.edu:45678/hw/hw8/itemTopRated.jpg\" height=\"39px\" width=\"39px\"></img></div>';
+				}
+				else
+				{
+					int_body = int_body+'<div style=\"padding-left:11px; display:inline;\" id=\"rated\" ></div>';
+				}
+				
+				int_body = int_body+'<div style=\"padding-left:11px; display:inline;\" id=\"details\"><a id=\"view_details\" onclick=\"return disp_Dets('+i+');\">View Details</a></div>';
+				int_body = int_body+'<div style=\"padding-left:11px; display:inline;\" id=\"fb_div\"><a onclick=\"return post_on_wall('+i+',response);\"><img src=\"http://cs-server.usc.edu:45678/hw/hw8/fb.png\" height=\"29px\" width=\"29px\"></img></a></div>';
+				int_body = int_body + '<div class=\"panel\" id=\"hidden_Div'+i+'\" style=\"display:none;\"></div>'
+				int_body = int_body+'</div>';
+				int_body = int_body+'</div>';
+				
+				
+
+				
+				int_body = int_body+'<div class="col-md-2">';
+				int_body = int_body+'</div>';
+				int_body = int_body+'</div>';
+				display_items+=counter;
+			}
+		}
+		
+		temp_x.html(int_body);
+		no_pages=Math.round((response["resultCount"]/response["itemCount"]) + 0.5);
+		var temp_y= $(".container");
+		var page_disp="<center><div><ul id=\"pages\" class=\"pagination pagination-sm\">";
+		
+		if(page_no!=1)
+		{
+			page_disp= page_disp+'<li id=\"decrement\" onclick=\"return goToPrev();\"><a>&laquo</a></li>';
+		}
+		flag=0;
+	
+		for(i=start;i<=end;i++)
+		{
+			if((i)<= Math.round((response["resultCount"]/response["itemCount"]) + 0.5))   
+			{
+				if(i==page_no)
+				{
+					page_disp = page_disp + '<li class=\"active\" id='+(i)+'><a>'+(i)+'</a></li>';
+				}
+				else
+				{
+					page_disp = page_disp + '<li class=\"\" id='+(i)+'><a  onclick=\"return goToPage('+(i)+');\">'+(i)+'</a></li>';
+				}
+			}
+			else
+			{
+				flag=1;
+			}
+		}
+		
+		if(flag!=1)
+		{
+			page_disp= page_disp+'<li id=\"increment\"><a onclick=\"return gotoNext();\">&raquo</a></li>';
+		}
+
+		page_disp = page_disp+'</ul></div></center>';
+		temp_y.html(page_disp);
+	}
+}
+
+
+//Function for developing pagination for next page 
+function gotoNext()
+{
+	if(page_no==end)
+	{
+		if(page_no<(no_pages-5))
+		{
+			start=start+5;
+			end=end+5;
+			page_no=start;
+		}
+		else
+		{
+			end=no_pages;
+			start=end-5;
+		}
+	}
+	else
+	{
+		page_no++;
+	}
+	
+	submitTheForm();
+}
+
+//function for developing pagination for previous page 
+function goToPrev()
+{
+	if(page_no==start && start>=1)
+	{
+		end = end-5;
+		start=start-5;
+		page_no=end;
+	}
+	else
+	{
+		page_no--;
+	}
+	submitTheForm();
+	
+}
+
+//function for developing pagination to current page 
+function goToPage(temp_val)
+{
+	page_no=temp_val;
+	submitTheForm();
+	return false;
+}
+
+
+//Function for incorporating tabbing in the view details section 
+function disp_Dets(t_val)
+{
+	
+	var divi_temp = $("#hidden_Div"+t_val);
+	var tabbing="<div class=\"container\">";
+	disp_t=divi_temp.css("display");
+	if(disp_t=="none")
+	{
+		tabbing = tabbing+ '<ul class=\"nav nav-tabs\" role=\"tablist\" id=\"tab'+t_val+'\">';
+		
+		tabbing = tabbing+'<li class=\"nav active\"><a href=\"#basic-info'+t_val+'\" data-toggle=\"tab\" role=\"tab\">Basic Info</a></li>';
+		tabbing = tabbing+'<li class=\"nav\"><a href=\"#seller-info'+t_val+'\" data-toggle=\"tab\" role=\"tab\">Seller Info</a></li>';
+		tabbing = tabbing+'<li class=\"nav\"><a href=\"#shipping-info'+t_val+'\" data-toggle=\"tab\" role=\"tab\">Shipping Info</a></li>';	
+		tabbing= tabbing+'</ul>';
+		
+		tabbing=tabbing+'<div class=\"tab-content\">';
+		tabbing = tabbing+'<div id=\"basic-info'+t_val+'\" class=\"tab-pane fade in active table-responsive\"><table class=\"\">';
+		tabbing=tabbing+'<tr><td style=\"width:202px;\"><b>Category Name</b></td><td style=\"width:202px;\">'+findNA(response["item"+t_val]["basicInfo"]["categoryName"])+'</td></tr>';
+		tabbing=tabbing+'<tr><td style=\"width:202px;\"><b>Condition</b></td><td style=\"width:202px;\">'+findNA(response["item"+t_val]["basicInfo"]["conditionDisplayName"])+'</td></tr>';
+		tabbing=tabbing+'<tr><td style=\"width:202px;\"><b>Buying Format</b></td><td style=\"width:202px;\">'+findNA(response["item"+t_val]["basicInfo"]["listingType"])+'</td></tr>';
+		tabbing = tabbing+'</table></div>';
+		tabbing = tabbing+'<div id=\"seller-info'+t_val+'\" class=\"tab-pane fade table-responsive\"><table class=\"\">';
+		tabbing=tabbing+'<tr><td style=\"width:202px;\"><b>User Name</b></td><td style=\"width:202px;\">'+findNA(response["item"+t_val]["sellerInfo"]["sellerUserName"])+'</td></tr>';
+		tabbing=tabbing+'<tr><td style=\"width:202px;\"><b>Feedback Score</b></td><td style=\"width:202px;\">'+findNA(response["item"+t_val]["sellerInfo"]["feedbackScore"])+'</td></tr>';
+		tabbing=tabbing+'<tr><td style=\"width:202px;\"><b>Positive Feedback</b></td><td style=\"width:202px;\">'+findNA(response["item"+t_val]["sellerInfo"]["positiveFeedbackPercent"])+'</td></tr>';
+		tabbing=tabbing+'<tr><td style=\"width:202px;\"><b>Feedback Rating</b></td><td style=\"width:202px;\">'+findNA(response["item"+t_val]["sellerInfo"]["feedbackRatingStar"])+'</td></tr>';
+		tabbing=tabbing+'<tr><td style=\"width:202px;\"><b>Top Rated</b></td><td style=\"width:202px;\"><span>';
+		if(response["item"+t_val]["sellerInfo"]["topRatedSeller"]=="true")
+		{
+			tabbing = tabbing + "<i class=\"glyphicon glyphicon-ok\" style=\"color:green\"></i>";
+	    }
+		else
+		{
+			tabbing = tabbing + "<i class=\"glyphicon glyphicon-remove\" style=\"color:red\"></i>";
+		}
+		
+		tabbing = tabbing +'</td></tr>';
+		tabbing=tabbing+'<tr><td style=\"width:200px;\"><b>Store</b></td>';
+			
+		if(response["item"+t_val]["sellerInfo"]["sellerStoreURL"]!="")
+		{
+			if(response["item"+t_val]["sellerInfo"]["sellerStoreName"]!=""){
+			tabbing = tabbing+'<td><a target=\"_blank\" style=\"text-decoration:none;\" href=\"'+response["item"+t_val]["sellerInfo"]["sellerStoreURL"]+'\">'+response["item"+t_val]["sellerInfo"]["sellerStoreName"]+'</a></td></tr>';
+			}
+			else{
+			tabbing = tabbing+'<td><a target=\"_blank\" style=\"text-decoration:none;\" href=\"'+response["item"+t_val]["sellerInfo"]["sellerStoreURL"]+'\">'+response["item"+t_val]["sellerInfo"]["sellerStoreURL"]+'</a></td></tr>';
+			}
+			
+		}
+		else{
+		tabbing = tabbing+'<td>N/A</td></tr>';
+
+
+		}
+		tabbing=tabbing+'</table></div>';
+		tabbing = tabbing+'<div id=\"shipping-info'+t_val+'\" class=\"tab-pane fade\"><table class=\"\">';
+		tabbing=tabbing+'<tr><td style=\"width:202px\"><b>Shipping type</b></td><td style=\"width:202px\">'+findNA(response["item"+t_val]["shippingInfo"]["shippingType"])+'</td></tr>';
+		tabbing=tabbing+'<tr><td style=\"width:202px\"><b>Handling time</b></td><td style=\"width:202px\">'+findNA(response["item"+t_val]["shippingInfo"]["handlingTime"])+' day(s)</td></tr>';
+		tabbing=tabbing+'<tr><td style=\"width:202px\"><b>Shipping locations</b></td><td style=\"width:202px\">'+findNA(response["item"+t_val]["shippingInfo"]["shipToLocations"])+'</td></tr>';
+		tabbing=tabbing+'<tr><td style=\"width:202px\"><b>Expedited shipping</b></td><td>';
+		
+		if(response["item"+t_val]["shippingInfo"]["expeditedShipping"]=="true")
+		{
+			tabbing = tabbing + "<span class=\"glyphicon glyphicon-ok\" style=\"color:green\"></span>";
+	    }
+		else
+		{
+			tabbing = tabbing + "<span class=\"glyphicon glyphicon-remove\" style=\"color:red\"></span>";
+		}
+		tabbing= tabbing+'</td></tr>';
+		tabbing=tabbing+'<tr><td style=\"width:202px\"><b>One day shipping</b></td><td style=\"width:202px\">';
+		
+		if(response["item"+t_val]["shippingInfo"]["oneDayShippingAvailable"]=="true")
+		{
+		 	 tabbing = tabbing + "<i class=\"glyphicon glyphicon-ok\" style=\"color:green\"></i>";
+		}
+		else
+		{
+			tabbing = tabbing + "<i class=\"glyphicon glyphicon-remove\" style=\"color:red\"></i>";
+	    }
+		
+		tabbing=tabbing+ '</td></tr>';
+		tabbing=tabbing+'<tr><td style=\"width:202px\"><b>Returns accepted</b></td><td>';
+		if(response["item"+t_val]["shippingInfo"]["returnsAccepted"])
+		{
+		 	 tabbing = tabbing + "<span class=\"glyphicon glyphicon-ok\" style=\"color:green\"></span>";
+		}
+		else
+		{
+			tabbing = tabbing + "<span class=\"glyphicon glyphicon-remove\" style=\"color:red\"></span>";
+		}
+		
+		tabbing=tabbing+'</td></tr>';
+		tabbing=tabbing+'</table></div>';
+		divi_temp.html(tabbing+'</div>');
+		divi_temp.css("display","block");
+	}
+	else
+	{
+		divi_temp.css("display","none");
+	}
+}
+
+	
+<!-- For facebook integration-->
+window.fbAsyncInit = function() {
+									FB.init({
+												appId      : '1630755987147769',
+												version    : 'v2.3',
+												status : true, // check login status
+												cookie : true, // enable cookies to allow the server to access the session
+												xfbml  : true , //  XFBML
+												oauth : true // Enable oauth authentication
+											});
+								};
+
+(function(d, s, id)
+{
+	var js, fjs = d.getElementsByTagName(s)[0];
+	if (d.getElementById(id)) {return;}
+	js = d.createElement(s); js.id = id;
+	js.src = "//connect.facebook.net/en_US/sdk.js";
+	fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));
+
+function post_on_wall(ind,res)
+{
+    FB.login(function(response)
+    {
+        if (response.authResponse)
+        {
+		   FB.ui({
+			   
+		   method: 'feed',
+		   name: res["item"+ind]["basicInfo"]["title"],
+		   link: res["item"+ind]["basicInfo"]["viewItemURL"],
+		   description: "Price: $"+res["item"+ind]["basicInfo"]["convertedCurrentPrice"]+", Location:"+res["item"+ind]["basicInfo"]["location"],
+		   picture: res["item"+ind]["basicInfo"]["galleryURL"],
+		   caption: "Search information from eBay.com",
+		   display: 'popup'
+		   
+        },function(response){ if(response && response.post_id){alert("Posted Successfully");} });
+        }
+        else
+        {
+            alert('Not logged in');
+        }
+    }, { scope : 'publish_stream' });
+}
+</script>
+
+
+</head>
+
+
+<body>
+
+
+<!-- for the logo-->
+<div id="Logo" style="margin-left:10px;margin-top:10px" >
+	<div class="span6" style="float:left">
+		<img src="http://cs-server.usc.edu:45678/hw/hw6/ebay.jpg" width="150px" height="90px"></img>
+	</div>
+	<div style="float:left">
+		<h1>Shopping</h1>
+	</div>
+	</div>
+<br> 
+
+
+
+<!-- Form for searching values -->
+<div class="container-fluid">
+	<form class="form-horizontal" role="form" method="GET"  name="myform" id="myform" style="clear:both" novalidate="novalidate">
+	<!-- For Keywords -->
+		<div class="form-group">
+		
+			<label class="control-label col-lg-2">Keywords: *</label>
+				<div class="col-lg-7">
+					<input style="width:100%" type="text" class="form-control" name="keywords" id="keywords" placeholder="Enter keyword" >
+				</div>
+		</div>
+		
+	<!-- For Price Range -->
+		<div class="form-group">
+		
+			<label class="control-label col-lg-2">Price Range:</label>
+				<div class="col-lg-10" style="padding-left:0"> 
+					<div class="col-lg-4">
+						<input type="text" class="form-control" name="pricefrom" id="pricefrom" placeholder="from ($)" > 
+					</div>
+					<div class="col-lg-4">
+						<input type="text" class="form-control" name="priceto" id="priceto" placeholder="to ($)" > 
+					</div>
+				</div>
+				
+		</div>
+		
+	<!-- For Conditions -->
+		<div class="form-group">
+		
+			<label class="control-label col-lg-2">Condition:</label>
+				<div class="col-lg-10">
+					<div class="col-md-8 form-group checkbox">
+						<label style="margin-right:20px;"><input type="checkbox"  name="condition[]" value="New""> New</label>
+						<label style="margin-right:20px;"><input type="checkbox"  name="condition[]" value="Used"> Used</label>
+						<label style="margin-right:20px;"><input  type="checkbox" name="condition[]" value="VeryGood"> Very Good</label>
+						<label style="margin-right:20px;"><input  type="checkbox" name="condition[]" value="Good"> Good</label>
+						<label style="margin-right:20px;"><input  type="checkbox" name="condition[]" value="Acceptable"> Acceptable</label>
+					</div>
+				</div>
+				
+		</div>
+	
+	<!-- For buying formats -->
+	
+		<div class="form-group">
+		
+			<label class="control-label col-lg-2">Buying Formats:</label>
+				<div class="col-lg-10">
+					<div class="col-md-8 form-group checkbox">
+						<label style="margin-right:20px;"><input type="checkbox" name="buyingformats[]" value="buyitnow"> Now</label>
+		
+						<label style="margin-right:20px;"><input type="checkbox" name="buyingformats[]" value="auction"> Auction</label>
+		
+						<label style="margin-right:20px;"><input type="checkbox" name="buyingformats[]" value="classifiedads"> Classified Ads</label>
+					</div>
+				</div>
+		</div>
+
+		
+	<!-- For seller info -->
+	
+		<div class="form-group">
+	
+			<label class="control-label col-lg-2">Seller:</label>
+				<div class="col-lg-10">
+					<div class="col-md-8 form-group checkbox">
+						<label><input type="checkbox" name="seller" value="NA"> Return Accepted</label>
+					</div>
+				</div>
+		</div>
+	
+	<!-- For shipping  -->
+	
+		<div class="form-group">
+	
+			<label class="control-label col-lg-2">Shipping:</label>
+				<div class="col-lg-10">
+					<div class="col-md-8 form-group checkbox">
+						<label><input type="checkbox" name="shipping" value="shipping" > Shipping</label>
+						<label><input type="checkbox" name="expeditedshipping" value="expeditedshipping" > Expedited</label>
+					</div>
+				</div>
+		
+		<!-- for max handling days info -->
+		
+			<label class="control-label col-lg-2"></label>
+				<div class="col-md-7">
+					<input  type="text"  class="form-control" name="max_handling_days" id="max_handling_days" style="margin-top:10px;" placeholder="Max handling time(days)">
+				</div>
+	  
+		</div>
+	
+	<!-- for sorting info -->
+		<div class="form-group">
+	
+			<label class="control-label col-lg-2">Sort By:</label>
+			<div class="col-md-7" >
+				<select class="form-control" name="sortby">
+					<option name="best_match" value="BestMatch">Best Match</option>
+					<option name="pricehighest" value="CurrentPriceHighest">Price : Highest</option>
+					<option name="priceandshippinghighest" value="PricePlusShippingHighest">Price + Shipping : Highest</option>
+					<option name="priceandshippinglowest" value="PricePlusShippingLowest">Price + Shipping : Lowest</option>
+				</select>
+			</div>
+		
+		</div>
+	
+	
+	<!-- for results per page info -->
+		<div class="form-group">
+	
+			<label class="control-label col-lg-2">Results per page:</label>
+			<div class="col-md-7">
+				<select class=" form-control" name="resultsperpage" id="resultsperpage" >
+					<option name="5" value="5">5</option>
+					<option name="10" value="10">10</option>
+				</select>
+			</div>
+		
+		</div>
+	
+	
+	<!-- for clear and search buttons -->
+		<div class="form-group"> 
+			<div class="col-sm-offset-8 col-sm-2">
+				<button type="reset" onclick="return refresh();" class="btn btn-default">Clear</button>
+				<button type="submit" class="btn btn-primary" name="search" id="search" value="1" onclick="return initialize();">Search</button>
+			</div>
+		</div>
+	</form> <!-- form ends here --> 
+	
+</div>
+<br>
+<div id="whole">
+<div class="container-fluid">
+	<div class="col-xs-12">
+		<div class="col-md-2">
+		</div>
+		<div class="col-md-8">
+			<div id="res_count">
+
+			</div>
+		</div>
+	</div>
+</div>
+<br>
+
+
+<div id="holder_div">
+</div>
+
+<div class="container" id="pages">
+</div>
+
+<!-- for displaying modal pictures -->
+
+
+<div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content" id="mymodal">
+			<button  type="button" class="close" style="padding:11px;" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+			<center><h4 class="modal-title"  id="mymodallbl"></h4></center>
+			<hr>
+		
+			<div class="modal-body">
+			<center><img class="img-responsive" id="mymodalimage" ></img></center>  
+			</div>
+		</div>
+	</div>
+  
+</div>
+</div>
+<noscript>
+</body>
+
+</html>
